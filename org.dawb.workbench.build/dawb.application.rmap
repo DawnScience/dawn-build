@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rmap
+ xmlns="http://www.eclipse.org/buckminster/RMap-1.0"
+ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+ xmlns:mp="http://www.eclipse.org/buckminster/MavenProvider-1.0"
+ xmlns:bc="http://www.eclipse.org/buckminster/Common-1.0">
+
+  <searchPath name="default">
+    <provider
+     readerType="svn"
+     componentTypes="eclipse.feature,osgi.bundle,buckminster"
+     source="true">
+      <uri
+       format="https://svn.codespot.com/a/eclipselabs.org/dawb/trunk/{0}">
+        <bc:propertyRef key="buckminster.component" />
+      </uri>
+    </provider>
+  </searchPath>
+
+  <locator searchPathRef="default" pattern="^org\.dawb\..*" />
+  <redirect href="http://www.eclipse.org/buckminster/samples/rmaps/dogfood2.rmap" pattern=".*"/>
+</rmap>

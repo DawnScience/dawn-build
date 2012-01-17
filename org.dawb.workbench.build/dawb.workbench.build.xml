@@ -1,0 +1,439 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+Building an RCP application from a product configuration file. Build designed to run on UNIX.
+
+PDE Build comes with infrastructure to build a complete RCP application from a product configuration file. Most of the setup necessary for such a build can be done through a few modifications to the template build.properties provided in PDE build. The following section focuses on setting up a simple product build assuming that all plug-ins and features (both to build and pre-built) referenced by the product file are already locally available on disk.
+Basic setup
+
+The first step in setting up a build is to create the directory in which the build will take place. This directory will be referred to as the build directory and will contain the plug-ins and features to build as well as all the generated artifacts. Next, copy your plug-ins and features respectively into "plugins" and "features" subdirectories. Your product configuration file is expected to be in one of these plugins/features.
+The second step in setting up a build is to copy the template build.properties file from org.eclipse.pde.build/templates/headless-build to a new directory which will be the build configuration directory (also referred to as the configuration directory). Edit the copied build.properties file and set the following properties:
+
+    * product: the location of your product configuration file in the form "/<plugin or feature id>/path/to/.product"
+    * baseLocation:  the location of an eclipse install containing all the pre-built features and plug-ins that your product requires in features/ and plugins/ subdirectories.  The RCP delta pack (it is available from the eclipse download page) is mandatory as it includes the org.eclipse.platform.launchers feature which contains the launchers and root files necessary for a product.
+    * buildDirectory:  the directory the build will take place in.  Set this to the full path of the build directory created previously.
+    * configs: list the configurations for which you want your product to be built. You can uncomment the configuration(s) provided (be careful of the line continuations).
+    * archivePrefix: the name of the directory of your product once installed on disk.
+
+Overview of the directory structure
+
+<buildDirectory>/
+	plugins/
+		pluginToBuildA
+		pluginToBuildB
+			myProduct.product
+		...
+	features/
+		featureToBuild
+		...
+
+<buildConfiguration>/
+	build.properties
+
+<baseLocation>
+	plugins/
+		org.eclipse.core.runtime
+		org.eclipse.ui
+		...
+	features/
+		org.eclipse.rcp
+		org.eclipse.platform.launchers
+		...
+		
+
+Running the build
+To run the build you will use the org.elipse.ant.core.antRunner application. When invoking eclipse with this application to perform a build you need to set two arguments on the command line:
+
+    * -buildfile </path/to/productBuild.xml>:  This is the path to the productBuild.xml provided by pde build.  It is located in the org.eclipse.pde.build/scripts/productBuild directory.  This is the build file that drives the whole product build process.
+    * -Dbuilder=</path/to/configuration folder>:  This is the path to the build configuration folder.
+
+Run the antRunner application using the following command:
+java -jar <eclipseInstall>/plugins/org.eclipse.equinox.launcher_<version>.jar -application org.eclipse.ant.core.antRunner -buildfile <<eclipseInstall>/plugins/org.eclipse.pde.build_<version>/scripts/productBuild/productBuild.xml> -Dbuilder=<path to the build configuration folder>
+
+-->
+<project name="Build DAWB" default="org.dawb.rcp.build" basedir=".">
+
+	<!-- NOTE: Build to be run in the org.dawb.workbench.build folder -->
+	
+	<!-- Please edit this to somewhere with disk space. -->
+	<property name="build.dir" value="../../org.dawb.rcp.build/" />
+	
+	<!-- If you are using a git repo, this will be the project location
+	     for the PDE build. Therefore you need to say the path to the
+	     git repo. -->
+	<!-- Normally -->
+  	<condition property="git.repo" value="${user.home}/git">
+ 		 <and>
+ 		    <available file="${user.home}/git/scisoft-core/"/>
+ 		 </and>
+	</condition>
+ 	<condition property="git.repo.ext" value="">
+ 		 <and>
+ 		    <available file="${user.home}/git/scisoft-core/"/>
+ 		 </and>
+	</condition>
+
+	<!-- Build at Diamond -->
+ 	<condition property="git.repo" value="../../../SDA_trunk.build_publish/buckminster_workspace_git/scisoft/">
+ 		 <and>
+ 		    <available file="../../../SDA_trunk.build_publish/buckminster_workspace_git/scisoft/scisoft-core.git/"/>
+ 		 </and>
+	</condition>
+ 	<condition property="git.repo.ext" value=".git">
+ 		 <and>
+ 		    <available file="../../../SDA_trunk.build_publish/buckminster_workspace_git/scisoft/scisoft-core.git/"/>
+ 		 </and>
+	</condition>
+
+	<!-- Build at ESRF -->
+ 	<condition property="git.repo" value="/scisoft/jenkins/git">
+ 		 <and>
+ 		    <available file="/scisoft/jenkins/git/scisoft-core/"/>
+ 		 </and>
+	</condition>
+ 	<condition property="git.repo.ext" value="">
+ 		 <and>
+ 		    <available file="/scisoft/jenkins/git/scisoft-core/"/>
+ 		 </and>
+	</condition>
+	
+	<!-- This is *NOT* the target. It is the folder which contains the eclipse version
+	     that we will use to do the build. -->
+  	<condition property="eclipse.dir" value="/dls_sw/dasc/eclipse/linux_x86_64">
+  		 <and>
+  		    <available file="/dls_sw/dasc/eclipse/linux_x86_64"/>
+  		 </and>
+	</condition>
+  	<condition property="eclipse.dir" value="C:/Work/eclipse/">
+  		 <and>
+  		    <available file="C:/Work/eclipse/"/>
+  		 </and>
+	</condition>
+  	<condition property="eclipse.dir" value="/sware/isdd/soft/eclipse/indigo/linux_x64">
+  		 <and>
+  		    <available file="/sware/isdd/soft/eclipse/indigo/linux_x64"/>
+  		 </and>
+	</condition>
+	
+	<property name="launcher.name" value="org.eclipse.equinox.launcher_1.2.0.v20110502.jar"/>
+	
+	<!-- Type of build.  Used in naming the build output.  Typically this value is
+	     one of I, N, M, S, ... -->
+	<property name="dawb.build.type" value="I" />
+	
+    <tstamp>
+        <format property="build.qualifier" pattern="yyyyddHHmm" locale="en,UK"/>
+    </tstamp>
+	<property name="dawb.version.name" value="Salamander" />
+	<property name="dawb.version"      value="1.0.0" />
+	<property name="dawb.build"        value="devel-${build.qualifier}" />
+	<property name="dawb.qualifier"    value="-${dawb.version}-${dawb.build}" />
+	
+    <target name="org.dawb.rcp.build">
+ 
+    	<!-- Find out where we are either in the org.dawb.workbench.build plugin or a level above it.
+    	     Set ant.build.location as needed. -->
+       	<property name="build.src.location" value="./" />
+      	<condition property="build.src.location" value="../">
+      		 <and>
+      		    <available file="../org.dawb.workbench.build/"/>
+      		 </and>
+    	</condition>
+    	
+    	<!-- Call the targets -->
+    	<antcall target="org.dawb.print.start"/>
+    	<antcall target="org.dawb.copy.build">
+    		<param name="build.src.location" value="../" />
+    	</antcall>
+    	<antcall target="org.dawb.copy.build.git" />
+    	<antcall target="org.dawb.expand.eclipse"/>
+    	<antcall target="org.dawb.replace.files"/>
+    	<antcall target="org.dawb.create.jres"/>
+    	<antcall target="org.dawb.eclipse.build"/>
+    	<antcall target="org.dawb.scp.edna.site"/> 
+    	<!-- (Only if you set edna.site.id to make the scp work (also edna.site.pswd)) -->
+     	
+    </target>
+    	
+	
+    <target name="org.dawb.print.start">
+	    <tstamp>
+	        <format property="time.stamp" pattern="dd-MMM-yyyy HH:mm" locale="en,UK"/>
+	    </tstamp>
+   	
+   	    <echo>Welcome to DAWB RCP Application Build</echo>
+       	<echo>Build of:       '${dawb.version.name} ${dawb.qualifier}'</echo>
+       	<echo>Build on:       '${time.stamp}'</echo>
+   	    <echo>Building to:    '${build.dir}'</echo>
+      	<echo>Using Eclipse:  '${eclipse.dir}'</echo>
+      	<echo>Local git repo: '${git.repo}'</echo>
+    </target>
+
+	
+    <!-- Sets up the files and folders ready for a build. Does not check out of svn
+         but uses the execution folder as the project org.dawb.plugin.build which 
+         then uses relative paths to copy all the code in. Could also use SVN tasks to 
+         check things out then chdir to the org.dawb.plugin.build project and run a 
+         build from here -->
+    <target name="org.dawb.copy.build">
+    	
+    	<!-- Setup !-->
+        <delete dir="${build.dir}" />
+    	<mkdir  dir="${build.dir}" />
+    	
+    	<!-- Copy plugins to plugins and features to features
+    	     @see http://help.eclipse.org/galileo/index.jsp?nav=/4_2_0
+    	 -->
+    	<mkdir  dir="${build.dir}/build" />
+    	<mkdir  dir="${build.dir}/base" />
+    	<mkdir  dir="${build.dir}/build/plugins" />
+    	<mkdir  dir="${build.dir}/build/features" />
+    	<mkdir  dir="${build.dir}/config" />
+    	
+    	<!-- Copy plugins -->
+    	<copy todir="${build.dir}/build/plugins/">
+    	    <fileset dir="${build.src.location}">
+       	        <include name="com.isencia.*/**"/>
+       	        <include name="com.teaminabox.*/**"/>
+      	        <include name="org.edna.*/**"/>
+      	        <include name="org.dawb.*/**"/>
+      	        <include name="uk.ac.*/**"/>
+              	<include name="org.lwjgl.*/**"/>
+              	<include name="org.csstudio.*/**"/>
+    	    	
+      	        <exclude name="**/*.class"/>
+     	        <exclude name="org.dawb.workbench.target/**"/>
+      	        <exclude name="org.dawb.workbench.build/**"/>
+      	        <exclude name="*.feature/**"/>
+      	        <exclude name="edna/**"/>
+    	    </fileset>
+    	</copy>
+    	    	
+    	<copy todir="${build.dir}/build/features/">
+    	    <fileset dir="${build.src.location}">
+      	        <include name="*.feature/**"/>
+    	    </fileset>
+    	</copy>
+    	
+    	<copy todir="${build.dir}/base/">
+    	    <fileset dir="${build.src.location}/org.dawb.workbench.target/eclipse/">
+       	        <include name="**"/>
+    	    </fileset>
+    	    <fileset dir="${build.src.location}/org.dawb.workbench.target/emf/">
+       	        <include name="**"/>
+    	    </fileset>
+    	    <fileset dir="${build.src.location}/org.dawb.workbench.target/gef/">
+       	        <include name="**"/>
+    	    </fileset>
+   	        <fileset dir="${build.src.location}/org.dawb.workbench.target/gmf/">
+       	        <include name="**"/>
+    	    </fileset>
+    	
+    	    <fileset dir="${build.src.location}/org.dawb.workbench.target/other/">
+       	        <include name="**"/>
+    	    </fileset>
+        	<fileset dir="${build.src.location}/org.dawb.workbench.target/pydev/">
+           	    <include name="**"/>
+        	</fileset>
+    	    <fileset dir="${build.src.location}/org.dawb.workbench.target/wst/">
+       	        <include name="**"/>
+    	    </fileset>
+
+    	</copy>
+    	
+    	<copy todir="${build.dir}/base/plugins/">
+    	    <fileset dir="${build.src.location}/org.dawb.workbench.target/bundles/">
+       	        <include name="**"/>
+    	    </fileset>
+    	</copy>
+    </target>
+	
+	<target name="org.dawb.copy.build.git">
+	
+		<!-- 
+	   	 Copy git plugins from sda if that is where they are
+   	     This folder may not be present when using the dawb SVN repo only
+		 One day, public git day, everyone will use this
+		 or better yet, buckminster.
+		-->
+
+	    <copy todir="${build.dir}/build/plugins/">
+				    		
+   		<!-- This is a bit of a bodge really, we should use a buckminster task to
+   		     pull this stuff out and then build from that. -->
+    	    <fileset dir="${git.repo}/scisoft-core${git.repo.ext}">
+      	        <include name="uk.ac.*/**"/>   	    	
+      	        <exclude name="**/*.class"/>
+      	        <exclude name="*.feature/**"/>
+    	    </fileset>
+    	    <fileset dir="${git.repo}/scisoft-ui${git.repo.ext}">
+      	        <include name="uk.ac.*/**"/>   	    	
+      	        <exclude name="**/*.class"/>
+      	        <exclude name="*.feature/**"/>
+    	    </fileset>
+        </copy>
+	</target>
+	
+	
+    <target name="org.dawb.expand.eclipse">
+ 	
+    	<unzip  src="eclipse-3.7.1-delta-pack.zip"
+    		    dest="${build.dir}"/>
+ 
+    </target>
+    	
+    <target name="org.dawb.replace.files">
+    	
+    	<!-- create build.properties with correct settings for eclipse build -->
+    	<path id="build.dir.path" location="${build.dir}"/>
+    	<pathconvert targetos="unix" property="build.dir.abs" refid="build.dir.path"/>
+   	    
+    	<!-- This is a custom version of build.properties that already has some
+    	     replacements hand made to it, for instance product location -->
+    	<copy todir="${build.dir}/config/" file="build.properties"/>
+    	
+    	<replace file="${build.dir}/build/plugins/org.dawb.workbench.application/config/java.properties"
+    		     token="DAWB.VERSION.NAME"
+    		     value="${dawb.version.name}"/>
+
+    	<replace file="${build.dir}/build/plugins/org.dawb.workbench.application/config/java.properties"
+    		     token="DAWB.VERSION"
+    		     value="${dawb.version}"/>
+    	
+    	<replace file="${build.dir}/build/plugins/org.dawb.workbench.application/config/java.properties"
+    		     token="DAWB.BUILD"
+    		     value="${dawb.build}"/>
+    	
+    	<replace file="${build.dir}/build/plugins/org.dawb.workbench.application/config/java.properties"
+    		     token="DAWB.QUALIFIER"
+    		     value="${dawb.qualifier}"/>
+    	
+    	<replace file="${build.dir}/config/build.properties"
+    	         token="DAWB.BUILD.DIR"
+    	         value="${build.dir.abs}/build/"/>
+    	
+    	<replace file="${build.dir}/config/build.properties"
+    	         token="DAWB.BUILD.TYPE"
+    	         value="${dawb.build.type}"/>
+
+    	<replace file="${build.dir}/config/build.properties"
+    	         token="DAWB.QUALIFIER"
+    	         value="${dawb.qualifier}"/>
+
+    	<replace file="${build.dir}/config/build.properties"
+    	         token="DAWB.TARGET.DIR"
+    	         value="${build.dir.abs}/base/"/>
+    	
+    	<replace file="${build.dir}/config/build.properties"
+    	         token="DAWB.ECLIPSE.DIR"
+    	         value="${build.dir.abs}/eclipse/"/>
+
+    	<tstamp>
+	        <format property="time.stamp" pattern="yyyymmdd" locale="en,UK"/>
+	    </tstamp>
+    	
+    	<replace file="${build.dir}/config/build.properties"
+    	         token="DAWB.TIME.STAMP"
+    	         value="${time.stamp}"/>
+   	
+        <!-- Proper builds will remove the debugging
+        
+   	    <replace file="${build.dir}/build/plugins/org.dawb.workbench.application/config/logback.xml"
+    	         token="debug"
+    	         value="error"/>
+    	
+    	<replace file="${build.dir}/build/plugins/org.dawb.workbench.application/config/log4j.properties"
+    	         token="DEBUG"
+    	         value="ERROR"/>
+    	
+     	<replace file="${build.dir}/build/plugins/com.isencia.passerelle.workbench.model/config/logback.xml"
+    	         token="debug"
+    	         value="info"/>
+    	
+     	<replace file="${build.dir}/build/plugins/com.isencia.passerelle.workbench.model/config/log4j.properties"
+    	         token="DEBUG"
+    	         value="INFO"/>
+        -->
+    </target>
+	
+	
+	<!-- Unpacks the jres that the build will use -->
+    <target name="org.dawb.create.jres">
+    	
+    	<mkdir dir="${build.dir}/build/features/org.dawb.workbench.application.feature/jres/"/>
+     	
+    	<!-- Do Linux i386 -->
+     	<antcall target="org.dawb.create.jre">
+    		<param name="jre.name" value="linux_x86"/>
+   		    <param name="jre.file" value="jre-6-linux-i586.zip"/>
+       	</antcall>
+
+    	<!-- Do Linux x86_64 -->
+        <antcall target="org.dawb.create.jre">
+            <param name="jre.name" value="linux_x86_64"/>
+       		<param name="jre.file" value="jre-6-linux-x64.zip"/>
+        </antcall>
+    	
+    	<!-- Do Windows 32 -->
+        <antcall target="org.dawb.create.jre">
+            <param name="jre.name" value="win32"/>
+       		<param name="jre.file" value="jre-6-windows-i586.zip"/>
+        </antcall>
+
+    	<!-- Do Windows 64 -->
+        <antcall target="org.dawb.create.jre">
+            <param name="jre.name" value="win32_64"/>
+       		<param name="jre.file" value="jre-6-windows-x64.zip"/>
+        </antcall>
+    </target>
+
+	<target name="org.dawb.create.jre">
+    	
+    	<mkdir dir="${build.dir}/build/features/org.dawb.workbench.application.feature/jres/${jre.name}"/>
+    	
+    	<!-- ANT 1.8 -  preserve0permissions="true" -->
+      	<unzip src="${jre.file}"
+      	       dest="${build.dir}/build/features/org.dawb.workbench.application.feature/jres/${jre.name}"/>	
+
+    </target>
+
+
+	<!-- Calls the ant task for building the eclipse product. -->
+    <target name="org.dawb.eclipse.build">
+    	
+    	<java jar="${eclipse.dir}/plugins/${launcher.name}"
+    		  fork="true"
+    		  failonerror="true"
+    		  jvmversion="1.6">
+    		
+    		<arg value="-application"/>
+    		<arg value="org.eclipse.ant.core.antRunner"/>
+    		<arg value="-buildfile"/>
+    		<arg value="productBuild.xml"/>
+    		<jvmarg value="-Dbuilder=${build.dir}/config"/>
+
+    	</java>
+    		      	
+    </target>
+	
+	<!--
+	    When this task is run in Jenkins we set the edna.site.id and edna.site.pswd
+	    properties to get this task to delete the old zips and put these in their
+	    place. This means there is a record of what was built.
+    -->
+	<target name="org.dawb.scp.edna.site" if="edna.site.id">
+	
+		<sshexec host="www.edna-site.org"
+			username="${edna.site.id}"
+			password="${edna.site.pswd}"
+			command="rm -rf /var/www/pub/workbench/nightly/*.zip"/>
+		
+		
+		<scp todir="${edna.site.id}:${edna.site.pswd}@www.edna-site.org:/var/www/pub/workbench/nightly">
+		    <fileset dir="${build.dir}/build/I.dawb/">
+		      <include name="*.zip"/>
+		    </fileset>
+		</scp>
+	</target>
+
+</project> 

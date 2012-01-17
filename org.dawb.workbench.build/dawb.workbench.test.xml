@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- This is the main script for running DAWB tests 
+
+To run this in eclipse you need eclipse-test-framework installed.
+
+http://www.eclipse.org/downloads/download.php?file=/eclipse/downloads/drops/R-3.6.1-201009090800/eclipse-test-framework-3.6.1.zip
+
+-->
+<project name="Test DAWB" default="org.dawb.test.headless" basedir=".">
+
+    
+	<target name="org.dawb.test.headless">
+		
+     
+		<property name="test.dir"  location="../"/>
+		<property name="test.plat" value="linux-x86_64"/> <!-- TODO Parametize -->
+		
+		<echo>Running tests in ${test.dir}</echo>
+		
+	    <path id="test.path">
+
+		    <fileset dir="${test.dir}">
+		    	<include name="org.dawb.workbench.target/bundles/*.jar"/>
+		    	<include name="org.dawb.workbench.target/eclipse/**/*.jar"/>
+		    	<include name="org.dawb.workbench.target/other/**/*.jar"/>
+		    	<include name="org.dawb.workbench.target/pydev/**/*.jar"/>
+		    	<include name="org.dawb.workbench.target/emf/**/*.jar"/>
+		    	<include name="org.dawb.workbench.target/gmf/**/*.jar"/>
+		    	<include name="org.dawb.jep/jep.jar"/>
+		    	
+		    	<exclude name="**/ant.jar"/>
+		        <exclude name="**/ant-*.jar"/>
+		    	<exclude name="**/com.springsource.org.apache.tools.ant*.jar"/>
+		    	<exclude name="**/org.apache.ant*.jar"/>
+		    	<exclude name="**/org.eclipse.ant*.jar"/>
+		    	<exclude name="**/org.eclipse.emf.ant*.jar"/>
+		    	<exclude name="**/pdebuild-ant.jar"/>
+		    	
+		    </fileset>
+			
+			<dirset dir="${test.dir}">
+			    <include name="org.*/bin/"/>
+			    <include name="uk.*/bin/"/>
+			    <include name="com.iscensia.*/target/classes/"/>
+			</dirset>
+				
+	    </path>
+
+		
+		<junit haltonfailure="yes" dir="${test.dir}">
+		
+			<env key="EDNA_HOME"  value="${test.dir}/edna"/>
+			<env key="EDNA_SITE"  value="ESRF"/>
+			<env key="LD_PRELOAD" value="/usr/lib/libpython2.6.so.1.0"/>
+			<env key="LD_LIBRARY_PATH" value="${test.dir}/org.dawb.jep/lib/${test.plat}:${test.dir}/org.dawb.hdf5/lib/${test.plat}"/>
+			<env key="PYTHONPATH" value="${test.dir}/org.dawb.fable.feature/python/fabio_0.0.7/linux-x86_64:${test.dir}/edna/kernel/src"/>
+						
+			<classpath refid="test.path"/>
+			
+			<formatter type="plain"/>
+		
+		    <test name="org.dawb.test.HeadlessTest" fork="true"/>
+			
+		</junit>
+
+
+    </target>
+	
+	
+</project>
