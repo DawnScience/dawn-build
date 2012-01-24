@@ -52,11 +52,24 @@ java -jar <eclipseInstall>/plugins/org.eclipse.equinox.launcher_<version>.jar -a
 
 -->
 <project name="Build DAWB" default="org.dawb.rcp.build" basedir=".">
-
-	<!-- NOTE: Build to be run in the org.dawb.workbench.build folder -->
+	
+	<!-- 
+	
+	    Warning to use this script you MUST set the Ant variable dawb.workspace in eclipse:
+	           Window->Preferences->Ant->Runtime->Properties
+	           
+	           dawb.workspace=${workspace_loc}
+	           
+	    It picks up the workspace_loc
+	    
+	    To run this script from Jenkins dawb.workspace must also be set.
+	-->
 	
 	<!-- Please edit this to somewhere with disk space. -->
-	<property name="build.dir" value="../../org.dawb.rcp.build/" />
+	<property name="build.dir" value="${dawb.workspace}/../org.dawb.rcp.build/" />
+	
+	
+	<!--$$$$$$$$$$$$   Finding out git locations, perhaps switch to sys prop $$$$$$$$$$$$$-->
 	
 	<!-- If you are using a git repo, this will be the project location
 	     for the PDE build. Therefore you need to say the path to the
@@ -72,6 +85,19 @@ java -jar <eclipseInstall>/plugins/org.eclipse.equinox.launcher_<version>.jar -a
  		    <available file="${user.home}/git/scisoft-core/"/>
  		 </and>
 	</condition>
+	
+	<!-- Sometimes -->
+ 	<condition property="git.repo" value="${user.home}/dawb_git">
+ 		 <and>
+ 		    <available file="${user.home}/dawb_git/scisoft-core/"/>
+ 		 </and>
+	</condition>
+ 	<condition property="git.repo.ext" value="">
+ 		 <and>
+ 		    <available file="${user.home}/dawb_git/scisoft-core/"/>
+ 		 </and>
+	</condition>
+
 
 	<!-- Build at Diamond -->
  	<condition property="git.repo" value="../../../SDA_trunk.build_publish/buckminster_workspace_git/scisoft/">
@@ -117,6 +143,11 @@ java -jar <eclipseInstall>/plugins/org.eclipse.equinox.launcher_<version>.jar -a
 	
 	<property name="launcher.name" value="org.eclipse.equinox.launcher_1.2.0.v20110502.jar"/>
 	
+	
+	
+	<!--$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$-->
+	
+	
 	<!-- Type of build.  Used in naming the build output.  Typically this value is
 	     one of I, N, M, S, ... -->
 	<property name="dawb.build.type" value="I" />
@@ -130,22 +161,10 @@ java -jar <eclipseInstall>/plugins/org.eclipse.equinox.launcher_<version>.jar -a
 	<property name="dawb.qualifier"    value="-${dawb.version}-${dawb.build}" />
 	
     <target name="org.dawb.rcp.build">
- 
-    	<!-- Find out where we are either in the org.dawb.workbench.build plugin or a level above it.
-    	     Set ant.build.location as needed. -->
-       	<property name="build.src.location" value="./" />
-      	<condition property="build.src.location" value="../">
-      		 <and>
-      		    <available file="../org.dawb.workbench.build/"/>
-      		 </and>
-    	</condition>
     	
     	<!-- Call the targets -->
     	<antcall target="org.dawb.print.start"/>
-    	<antcall target="org.dawb.copy.build">
-    		<param name="build.src.location" value="../" />
-    	</antcall>
-    	<antcall target="org.dawb.copy.build.git" />
+    	<antcall target="org.dawb.copy.build"/>
     	<antcall target="org.dawb.expand.eclipse"/>
     	<antcall target="org.dawb.replace.files"/>
     	<antcall target="org.dawb.create.jres"/>
@@ -192,87 +211,166 @@ java -jar <eclipseInstall>/plugins/org.eclipse.equinox.launcher_<version>.jar -a
     	
     	<!-- Copy plugins -->
     	<copy todir="${build.dir}/build/plugins/">
-    	    <fileset dir="${build.src.location}">
+    		
+    	    <fileset dir="${git.repo}/dawn-common${git.repo.ext}">
+     	        <include name="org.dawb.*/**"/>
+      	        <exclude name="**/*.class"/>
+      	        <exclude name="*.feature/**"/>
+    	    </fileset>
+		
+    	    <fileset dir="${git.repo}/dawn-edna${git.repo.ext}">
+     	        <include name="org.dawb.*/**"/>
+      	        <exclude name="**/*.class"/>
+      	        <exclude name="*.feature/**"/>
+    	    </fileset>
+
+    	    <fileset dir="${git.repo}/dawn-fable${git.repo.ext}">
+     	        <include name="org.dawb.*/**"/>
+              	<include name="org.lwjgl.*/**"/>
+     	        <exclude name="**/*.class"/>
+      	        <exclude name="*.feature/**"/>
+    	    </fileset>
+
+    	    <fileset dir="${git.repo}/dawn-isencia${git.repo.ext}">
+       	        <include name="com.isencia.*/**"/>
+     	        <exclude name="**/*.class"/>
+      	        <exclude name="*.feature/**"/>
+    	    </fileset>
+
+    	    <fileset dir="${git.repo}/dawn-isenciaui${git.repo.ext}">
        	        <include name="com.isencia.*/**"/>
        	        <include name="com.teaminabox.*/**"/>
-      	        <include name="org.edna.*/**"/>
-      	        <include name="org.dawb.*/**"/>
-      	        <include name="uk.ac.*/**"/>
-              	<include name="org.lwjgl.*/**"/>
-              	<include name="org.csstudio.*/**"/>
-    	    	
-      	        <exclude name="**/*.class"/>
-     	        <exclude name="org.dawb.workbench.target/**"/>
-      	        <exclude name="org.dawb.workbench.build/**"/>
+     	        <exclude name="**/*.class"/>
       	        <exclude name="*.feature/**"/>
-      	        <exclude name="edna/**"/>
     	    </fileset>
+
+    	    <fileset dir="${git.repo}/dawn-product${git.repo.ext}">
+     	        <include name="org.dawb.*/**"/>
+     	        <exclude name="**/*.class"/>
+      	        <exclude name="*.feature/**"/>
+    	    </fileset>
+
+    	    <fileset dir="${git.repo}/dawn-tango${git.repo.ext}">
+     	        <include name="org.dawb.*/**"/>
+     	        <exclude name="**/*.class"/>
+      	        <exclude name="*.feature/**"/>
+    	    </fileset>
+
+    	    <fileset dir="${git.repo}/dawn-third${git.repo.ext}">
+     	        <include name="org.dawb.*/**"/>
+     	        <exclude name="**/*.class"/>
+      	        <exclude name="*.feature/**"/>
+    	    </fileset>
+
+    	    <fileset dir="${git.repo}/dawn-ui${git.repo.ext}">
+     	        <include name="org.dawb.*/**"/>
+     	        <exclude name="**/*.class"/>
+      	        <exclude name="*.feature/**"/>
+    	    </fileset>
+
+    	    <fileset dir="${git.repo}/dawn-workflow${git.repo.ext}">
+     	        <include name="org.dawb.*/**"/>
+     	        <exclude name="**/*.class"/>
+      	        <exclude name="*.feature/**"/>
+    	    </fileset>
+    		
+       	    <fileset dir="${git.repo}/scisoft-core${git.repo.ext}">
+          	    <include name="uk.ac.*/**"/>   	    	
+          	    <exclude name="**/*.class"/>
+          	    <exclude name="*.feature/**"/>
+            </fileset>
+    		
+        	<fileset dir="${git.repo}/scisoft-ui${git.repo.ext}">
+          	    <include name="uk.ac.*/**"/>   	    	
+          	    <exclude name="**/*.class"/>
+          	    <exclude name="*.feature/**"/>
+        	</fileset>
+
     	</copy>
     	    	
     	<copy todir="${build.dir}/build/features/">
-    	    <fileset dir="${build.src.location}">
+    	    <fileset dir="${git.repo}/dawn-common${git.repo.ext}">
       	        <include name="*.feature/**"/>
     	    </fileset>
+		
+    	    <fileset dir="${git.repo}/dawn-edna${git.repo.ext}">
+      	        <include name="*.feature/**"/>
+    	    </fileset>
+
+    	    <fileset dir="${git.repo}/dawn-fable${git.repo.ext}">
+      	        <include name="*.feature/**"/>
+    	    </fileset>
+
+    	    <fileset dir="${git.repo}/dawn-isencia${git.repo.ext}">
+      	        <include name="*.feature/**"/>
+    	    </fileset>
+
+    	    <fileset dir="${git.repo}/dawn-isenciaui${git.repo.ext}">
+      	        <include name="*.feature/**"/>
+    	    </fileset>
+
+    	    <fileset dir="${git.repo}/dawn-product${git.repo.ext}">
+      	        <include name="*.feature/**"/>
+    	    </fileset>
+
+    	    <fileset dir="${git.repo}/dawn-tango${git.repo.ext}">
+      	        <include name="*.feature/**"/>
+    	    </fileset>
+
+    	    <fileset dir="${git.repo}/dawn-third${git.repo.ext}">
+      	        <include name="*.feature/**"/>
+    	    </fileset>
+
+    	    <fileset dir="${git.repo}/dawn-ui${git.repo.ext}">
+      	        <include name="*.feature/**"/>
+    	    </fileset>
+
+    	    <fileset dir="${git.repo}/dawn-workflow${git.repo.ext}">
+      	        <include name="*.feature/**"/>
+    	    </fileset>
+    		
+       	    <fileset dir="${git.repo}/scisoft-core${git.repo.ext}">
+      	        <include name="*.feature/**"/>
+            </fileset>
+    		
+        	<fileset dir="${git.repo}/scisoft-ui${git.repo.ext}">
+      	        <include name="*.feature/**"/>
+        	</fileset>
     	</copy>
     	
     	<copy todir="${build.dir}/base/">
-    	    <fileset dir="${build.src.location}/org.dawb.workbench.target/eclipse/">
+    	    <fileset dir="${dawb.workspace}/org.dawb.workbench.target/eclipse/">
        	        <include name="**"/>
     	    </fileset>
-    	    <fileset dir="${build.src.location}/org.dawb.workbench.target/emf/">
+    	    <fileset dir="${dawb.workspace}/org.dawb.workbench.target/emf/">
        	        <include name="**"/>
     	    </fileset>
-    	    <fileset dir="${build.src.location}/org.dawb.workbench.target/gef/">
+    	    <fileset dir="${dawb.workspace}/org.dawb.workbench.target/gef/">
        	        <include name="**"/>
     	    </fileset>
-   	        <fileset dir="${build.src.location}/org.dawb.workbench.target/gmf/">
+   	        <fileset dir="${dawb.workspace}/org.dawb.workbench.target/gmf/">
        	        <include name="**"/>
     	    </fileset>
     	
-    	    <fileset dir="${build.src.location}/org.dawb.workbench.target/other/">
+    	    <fileset dir="${dawb.workspace}/org.dawb.workbench.target/other/">
        	        <include name="**"/>
     	    </fileset>
-        	<fileset dir="${build.src.location}/org.dawb.workbench.target/pydev/">
+        	<fileset dir="${dawb.workspace}/org.dawb.workbench.target/pydev/">
            	    <include name="**"/>
         	</fileset>
-    	    <fileset dir="${build.src.location}/org.dawb.workbench.target/wst/">
+    	    <fileset dir="${dawb.workspace}/org.dawb.workbench.target/wst/">
        	        <include name="**"/>
     	    </fileset>
 
     	</copy>
     	
     	<copy todir="${build.dir}/base/plugins/">
-    	    <fileset dir="${build.src.location}/org.dawb.workbench.target/bundles/">
+    	    <fileset dir="${dawb.workspace}/org.dawb.workbench.target/bundles/">
        	        <include name="**"/>
     	    </fileset>
     	</copy>
     </target>
-	
-	<target name="org.dawb.copy.build.git">
-	
-		<!-- 
-	   	 Copy git plugins from sda if that is where they are
-   	     This folder may not be present when using the dawb SVN repo only
-		 One day, public git day, everyone will use this
-		 or better yet, buckminster.
-		-->
 
-	    <copy todir="${build.dir}/build/plugins/">
-				    		
-   		<!-- This is a bit of a bodge really, we should use a buckminster task to
-   		     pull this stuff out and then build from that. -->
-    	    <fileset dir="${git.repo}/scisoft-core${git.repo.ext}">
-      	        <include name="uk.ac.*/**"/>   	    	
-      	        <exclude name="**/*.class"/>
-      	        <exclude name="*.feature/**"/>
-    	    </fileset>
-    	    <fileset dir="${git.repo}/scisoft-ui${git.repo.ext}">
-      	        <include name="uk.ac.*/**"/>   	    	
-      	        <exclude name="**/*.class"/>
-      	        <exclude name="*.feature/**"/>
-    	    </fileset>
-        </copy>
-	</target>
 	
 	
     <target name="org.dawb.expand.eclipse">
@@ -434,6 +532,12 @@ java -jar <eclipseInstall>/plugins/org.eclipse.equinox.launcher_<version>.jar -a
 		      <include name="*.zip"/>
 		    </fileset>
 		</scp>
+		
+		<sshexec host="www.edna-site.org"
+			username="${edna.site.id}"
+			password="${edna.site.pswd}"
+			command="chmod 0777 /var/www/pub/workbench/nightly/*.zip"/>
+
 	</target>
 
 </project> 
