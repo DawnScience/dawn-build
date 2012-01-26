@@ -112,14 +112,14 @@ java -jar <eclipseInstall>/plugins/org.eclipse.equinox.launcher_<version>.jar -a
 	</condition>
 
 	<!-- Build at ESRF -->
- 	<condition property="git.repo" value="/scisoft/jenkins/git">
+ 	<condition property="git.repo" value="/home/jenkins/workspace/WorkbenchTest">
  		 <and>
- 		    <available file="/scisoft/jenkins/git/scisoft-core/"/>
+ 		    <available file="/home/jenkins/workspace/WorkbenchTest/scisoft-core"/>
  		 </and>
 	</condition>
  	<condition property="git.repo.ext" value="">
  		 <and>
- 		    <available file="/scisoft/jenkins/git/scisoft-core/"/>
+ 		    <available file="/home/jenkins/workspace/WorkbenchTest/scisoft-core/"/>
  		 </and>
 	</condition>
 	
