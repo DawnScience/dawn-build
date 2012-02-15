@@ -286,18 +286,6 @@ java -jar <eclipseInstall>/plugins/org.eclipse.equinox.launcher_<version>.jar -a
           	    <exclude name="*.feature/**"/>
         	</fileset>
 
-       	    <fileset dir="${git.repo}/gda-common${git.repo.ext}">
-          	    <include name="uk.ac.*/**"/>   	    	
-          	    <exclude name="**/*.class"/>
-          	    <exclude name="*.feature/**"/>
-            </fileset>
-    		
-        	<fileset dir="${git.repo}/gda-common-rcp${git.repo.ext}">
-          	    <include name="uk.ac.*/**"/>   	    	
-          	    <exclude name="**/*.class"/>
-          	    <exclude name="*.feature/**"/>
-        	</fileset>
-
     	</copy>
     	    	
     	<copy todir="${build.dir}/build/features/">
@@ -349,13 +337,6 @@ java -jar <eclipseInstall>/plugins/org.eclipse.equinox.launcher_<version>.jar -a
       	        <include name="*.feature/**"/>
         	</fileset>
 
-    		<fileset dir="${git.repo}/gda-common${git.repo.ext}">
-      	        <include name="*.feature/**"/>
-            </fileset>
-    		
-        	<fileset dir="${git.repo}/gda-common-rcp${git.repo.ext}">
-      	        <include name="*.feature/**"/>
-        	</fileset>
     	</copy>
     	
     	<copy todir="${build.dir}/base/">
