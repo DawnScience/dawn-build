@@ -286,7 +286,13 @@ java -jar <eclipseInstall>/plugins/org.eclipse.equinox.launcher_<version>.jar -a
           	    <exclude name="*.feature/**"/>
         	</fileset>
 
-    	</copy>
+        	<fileset dir="${git.repo}/embl-cca${git.repo.ext}">
+          	    <include name="org.embl.*/**"/>   	    	
+          	    <exclude name="**/*.class"/>
+          	    <exclude name="*.feature/**"/>
+        	</fileset>
+
+        	</copy>
     	    	
     	<copy todir="${build.dir}/build/features/">
     	    <fileset dir="${git.repo}/dawn-common${git.repo.ext}">
